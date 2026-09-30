@@ -1,0 +1,41 @@
+{
+  "id": "./",
+  "name": "Broker Book – Diamond Brokerage",
+  "short_name": "Broker Book",
+  "description": "Price cards, deals, payable, receivable and brokerage for diamond brokers — fast, simple, works offline.",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F4F7FB",
+  "theme_color": "#F4F7FB",
+  "lang": "en-IN",
+  "dir": "ltr",
+  "categories": ["business", "finance", "productivity"],
+  "prefer_related_applications": false,
+  "launch_handler": { "client_mode": "focus-existing" },
+  "icons": [
+    { "src": "icons/icon-48.png",  "sizes": "48x48",   "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-72.png",  "sizes": "72x72",   "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-96.png",  "sizes": "96x96",   "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-144.png", "sizes": "144x144", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-152.png", "sizes": "152x152", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-256.png", "sizes": "256x256", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "New price card", "short_name": "Price card", "url": "./?action=card", "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }] },
+    { "name": "New deal", "short_name": "Deal", "url": "./?action=deal", "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }] },
+    { "name": "Add money", "short_name": "Money", "url": "./?action=money", "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }] }
+  ],
+  "screenshots": [
+    { "src": "screenshots/home-phone.png", "sizes": "780x1688", "type": "image/png", "form_factor": "narrow", "label": "Dashboard: to receive, to pay and brokerage" },
+    { "src": "screenshots/card-phone.png", "sizes": "780x1688", "type": "image/png", "form_factor": "narrow", "label": "Price card ready to share on WhatsApp" },
+    { "src": "screenshots/home-wide.png", "sizes": "1280x800", "type": "image/png", "form_factor": "wide", "label": "Broker Book on desktop" }
+  ]
+}
