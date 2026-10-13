@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Broker Book · Rev 14 · 13 Oct 2026 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -149,6 +150,13 @@ main{padding-top:18px}
 .daypick{display:flex;gap:6px;margin-top:6px}
 .daypick button{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:4px 10px;font-size:12.5px;font-weight:700;color:var(--ink2)}
 .daypick button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.tag.own{background:var(--get-soft);color:var(--get);border-color:transparent}
+.profit-pos{color:var(--get)} .profit-neg{color:var(--pay)}
+.parcel.own .lining{background:var(--get-soft)}
+.parcel.own .lining .v{color:var(--get)}
+.parcel.own .lining .v.hero{color:var(--get)}
+.parcel.own .meter{display:none}
+.kindseg{margin-bottom:14px}
 .qrow-act{display:flex;gap:6px;flex:none}
 .qrow-act button{border:1px solid var(--line);background:var(--card);border-radius:9px;padding:6px 10px;font-weight:700;font-size:13px}
 .qrow-act .ok{background:var(--parcel);border-color:var(--parcel);color:#fff}
@@ -258,18 +266,15 @@ dialog::backdrop{background:rgba(8,15,28,.5)}
       </div>
     </div>
 
-    <div id="overdueSection" hidden>
-      <div class="section-t od-head"><h3>Overdue<span class="od-badge" id="odCount">0</span></h3><button class="link" data-export="overdue">Export</button></div>
-      <div class="list" id="overdueList"></div>
+    <div class="parcel own" id="profitCard" style="margin-top:12px">
+      <div class="parcel-head"><h2>Total profit</h2><span class="hint" id="pfPeriod" style="margin:0"></span></div>
+      <div class="lining">
+        <div><div class="k">Total</div><div class="v hero" id="pfTotal">₹0</div></div>
+        <div><div class="k">Brokerage</div><div class="v" id="pfBrok">₹0</div></div>
+        <div><div class="k">Own deals</div><div class="v" id="pfProfit">₹0</div></div>
+        <div class="note" id="pfNote"></div>
+      </div>
     </div>
-
-    <div id="quoteSection" hidden>
-      <div class="section-t"><h3>Cards sent, waiting for yes</h3></div>
-      <div class="list" id="quoteList"></div>
-    </div>
-
-    <div class="section-t"><h3>Who to settle with</h3><button class="link" data-goto="parties">All parties</button></div>
-    <div class="list" id="settleList"></div>
 
     <div class="section-t"><h3>Latest entries</h3><button class="link" data-goto="entries">See all</button></div>
     <div class="list" id="recentList"></div>
@@ -290,6 +295,20 @@ dialog::backdrop{background:rgba(8,15,28,.5)}
 
   <!-- ENTRIES -->
   <section class="view" id="v-entries">
+    <div id="overdueSection" hidden style="margin-top:-8px">
+      <div class="section-t od-head"><h3>Overdue<span class="od-badge" id="odCount">0</span></h3><button class="link" data-export="overdue">Export</button></div>
+      <div class="list" id="overdueList"></div>
+    </div>
+
+    <div id="quoteSection" hidden>
+      <div class="section-t"><h3>Cards sent, waiting for yes</h3></div>
+      <div class="list" id="quoteList"></div>
+    </div>
+
+    <div class="section-t"><h3>Who to settle with</h3><button class="link" data-goto="parties">All parties</button></div>
+    <div class="list" id="settleList"></div>
+
+    <div class="section-t"><h3>All entries</h3></div>
     <input class="search" id="eSearch" placeholder="Search party, stone or note" autocomplete="off">
     <div class="chip-row">
       <div class="chips" id="eChips">
@@ -325,21 +344,26 @@ dialog::backdrop{background:rgba(8,15,28,.5)}
           <div class="daypick" data-for="d_date" style="margin-top:0;align-self:center"><button type="button" data-ago="0">Today</button><button type="button" data-ago="1">Yesterday</button></div>
         </div>
       </div>
+      <div class="seg full kindseg" id="d_kind">
+        <button type="button" data-v="broker" aria-pressed="true">Brokerage deal</button>
+        <button type="button" data-v="own" aria-pressed="false">Own deal · my rate</button>
+      </div>
       <div class="two">
-        <div class="field"><label for="d_seller">Seller</label><input class="in upper" id="d_seller" placeholder="Who sold"></div>
-        <div class="field"><label for="d_buyer">Buyer</label><input class="in upper" id="d_buyer" placeholder="Who bought"></div>
+        <div class="field"><label for="d_seller" id="d_sellerLab">Seller</label><input class="in upper" id="d_seller" placeholder="Who sold"></div>
+        <div class="field"><label for="d_buyer" id="d_buyerLab">Buyer</label><input class="in upper" id="d_buyer" placeholder="Who bought"></div>
       </div>
       <div class="field">
-        <label for="d_amount">Deal amount ₹</label>
+        <label for="d_amount" id="d_amountLab">Deal amount ₹</label>
         <input class="in big" id="d_amount" inputmode="decimal" placeholder="0">
         <div class="hint" id="d_amountHint">You can type 4.5L, 45K or 1.2Cr</div>
         <button type="button" class="inline-link" id="d_diffToggle">Buyer pays a different amount</button>
         <div class="field" id="d_buyerAmtWrap" hidden style="margin-top:10px">
-          <label for="d_buyerAmount">Buyer pays ₹</label>
+          <label for="d_buyerAmount" id="d_buyerAmtLab">Buyer pays ₹</label>
           <input class="in" id="d_buyerAmount" inputmode="decimal" placeholder="Same as deal amount">
+          <div class="hint" id="d_profitHint"></div>
         </div>
       </div>
-      <div class="field">
+      <div class="field" id="d_viaWrap">
         <span class="lab">Payment goes</span>
         <div class="seg full" id="d_via">
           <button type="button" data-v="me" aria-pressed="true">Through me</button>
@@ -355,7 +379,7 @@ dialog::backdrop{background:rgba(8,15,28,.5)}
         </div>
       </div>
       <div class="box">
-        <span class="lab">Brokerage</span>
+        <span class="lab" id="d_brokLab">Brokerage</span>
         <div class="two">
           <div><input class="in" id="d_pct" inputmode="decimal" placeholder="%" aria-label="Brokerage percent"><div class="hint">% of deal</div></div>
           <div><input class="in" id="d_brok" inputmode="decimal" placeholder="₹" aria-label="Brokerage amount"><div class="hint" id="d_brokHint">₹ total</div></div>
@@ -383,12 +407,16 @@ dialog::backdrop{background:rgba(8,15,28,.5)}
   <form class="sheet" id="quoteForm" method="dialog" autocomplete="off">
     <div class="sheet-h"><h2 id="quoteTitle">Price card</h2><button type="button" class="x" data-close aria-label="Close">×</button></div>
     <div class="sheet-b">
+      <div class="seg full kindseg" id="q_kind">
+        <button type="button" data-v="broker" aria-pressed="true">Brokerage deal</button>
+        <button type="button" data-v="own" aria-pressed="false">Own deal · my rate</button>
+      </div>
       <div class="two">
         <div class="field"><label for="q_seller">Supplier</label><input class="in upper" id="q_seller" placeholder="Who has the stone"></div>
         <div class="field"><label for="q_buyer">Customer</label><input class="in upper" id="q_buyer" placeholder="Who is asking"></div>
       </div>
       <div class="two">
-        <div class="field"><label for="q_pct">Brokerage % from supplier</label><input class="in" id="q_pct" inputmode="decimal" placeholder="1"></div>
+        <div class="field" id="q_pctWrap"><label for="q_pct">Brokerage % from supplier</label><input class="in" id="q_pct" inputmode="decimal" placeholder="1"></div>
         <div class="field"><label for="q_terms">Payment due in (days)</label><input class="in" id="q_terms" inputmode="numeric" placeholder="30"><div class="hint" id="q_termsHint"></div></div>
       </div>
       <div class="field">
@@ -398,7 +426,7 @@ dialog::backdrop{background:rgba(8,15,28,.5)}
           <div class="daypick" data-for="q_date" style="margin-top:0;align-self:center"><button type="button" data-ago="0">Today</button><button type="button" data-ago="1">Yesterday</button></div>
         </div>
       </div>
-      <div class="field"><span class="lab">Payment goes</span>
+      <div class="field" id="q_viaWrap"><span class="lab">Payment goes</span>
         <div class="seg full" id="q_via"><button type="button" data-v="me" aria-pressed="true">Through me</button><button type="button" data-v="direct" aria-pressed="false">Direct</button></div>
       </div>
       <span class="lab">Shape</span><div class="chips pick" id="q_shape"></div>
@@ -409,12 +437,20 @@ dialog::backdrop{background:rgba(8,15,28,.5)}
         <div class="field"><label for="q_rap">Rap $ / ct</label><input class="in big" id="q_rap" inputmode="decimal" placeholder="Auto"><div class="hint" id="q_rapHint"></div></div>
       </div>
       <div class="three">
-        <div class="field"><label for="q_disc">Discount %</label><input class="in" id="q_disc" inputmode="decimal" placeholder="28"></div>
+        <div class="field"><label for="q_disc" id="q_discLab">Discount %</label><input class="in" id="q_disc" inputmode="decimal" placeholder="28"></div>
         <div class="field"><label for="q_less">Less %</label><input class="in" id="q_less" inputmode="decimal" placeholder="0"></div>
         <div class="field"><label for="q_rate">₹ per $</label><input class="in" id="q_rate" inputmode="decimal" placeholder="95.74"></div>
       </div>
       <div class="hint" id="q_rateHint" style="margin:-6px 0 10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"></div>
       <div class="hint" id="q_discHint" style="margin:-4px 0 10px"></div>
+      <div class="box" id="q_ownWrap" hidden style="background:var(--get-soft);border-color:transparent">
+        <div class="two">
+          <div><label class="lab" for="q_mydisc">My discount % to customer</label><input class="in big" id="q_mydisc" inputmode="decimal" placeholder="26"></div>
+          <div><label class="lab" for="q_myamt">or my ₹ total</label><input class="in big" id="q_myamt" inputmode="decimal" placeholder="Auto"></div>
+        </div>
+        <div class="hint" id="q_myHint" style="font-size:14px;font-weight:600"></div>
+        <div class="hint">The card you share shows <b>your rate</b>. Supplier rate stays private.</div>
+      </div>
       <img class="cardimg" id="q_card" alt="Price card preview">
     </div>
     <div class="sheet-f">
@@ -500,7 +536,7 @@ dialog::backdrop{background:rgba(8,15,28,.5)}
         <button class="row" id="mTheme"><div class="main"><div class="t">Switch light / dark</div></div></button>
         <button class="row" id="mWipe"><div class="main"><div class="t r">Erase all data</div></div></button>
       </div>
-      <p class="hint" style="text-align:center;margin-top:14px">Version 7 Oct 2026 · 12</p>
+      <p class="hint" style="text-align:center;margin-top:14px"><b>Rev 14</b> · 13 Oct 2026</p>
       <input type="file" id="restoreFile" accept="application/json,.json" hidden>
     </div>
   </div>
@@ -548,6 +584,8 @@ dialog::backdrop{background:rgba(8,15,28,.5)}
 <script>
 (function(){
 "use strict";
+var REV = "14", REV_DATE = "13 Oct 2026";
+window.BROKER_BOOK_REV = REV;
 var KEY = "brokerBook.v1", OLD_KEY = "diamondStockPurchase.v2", THEME_KEY = "brokerBook.theme";
 
 /* ---------- helpers ---------- */
@@ -697,6 +735,14 @@ function dealDueTag(d){
   return "";
 }
 
+function ownTotals(period){
+  var m = today().slice(0,7), t = { profit:0, sales:0, cost:0, n:0 };
+  S.deals.forEach(function(d){
+    if (!isOwn(d) || (period !== "all" && (d.date || "").slice(0,7) !== m)) return;
+    t.n++; t.sales += d.buyerAmount || 0; t.cost += d.amount || 0; t.profit += dealProfit(d);
+  });
+  return t;
+}
 function brokTotals(period){
   var m = today().slice(0,7), inP = function(d){ return period === "all" || (d || "").slice(0,7) === m; };
   var e = 0, r = 0;
@@ -752,6 +798,14 @@ function render(){
   var note = period === "month" ? "Earned and received are for this month. Still to collect is everything pending." : (allB.earned ? Math.round(Math.min(100, allB.recv / allB.earned * 100)) + "% of all brokerage collected." : "Add a deal to start tracking brokerage.");
   if (B.t.brokExcess > 0.5) note += " Extra brokerage received: " + inr(B.t.brokExcess) + ".";
   $("bNote").textContent = note;
+  var ot = ownTotals(period), tot = bt.earned + ot.profit;
+  $("pfPeriod").textContent = period === "month" ? "This month" : "All time";
+  $("pfTotal").textContent = inr(tot);
+  $("pfTotal").style.color = tot < 0 ? "var(--pay)" : "";
+  $("pfBrok").textContent = inr(bt.earned);
+  $("pfProfit").textContent = inr(ot.profit);
+  $("pfProfit").style.color = ot.profit < 0 ? "var(--pay)" : "";
+  $("pfNote").textContent = "Brokerage earned + profit on own deals" + (ot.n ? " · " + ot.n + (ot.n === 1 ? " own deal" : " own deals") + (ot.cost ? ", margin " + (ot.profit / ot.cost * 100).toFixed(1) + "%" : "") : "");
 
   // settle list (top 8 by size)
   var settle = B.parties.filter(function(p){ return Math.abs(p.trade) > 0.5 || p.brokDue > 0.5; })
@@ -799,7 +853,10 @@ function entryRow(e){
   if (e.k === "deal"){
     var d = e.o, br = (d.brokSeller||0) + (d.brokBuyer||0);
     var who = (d.seller || "—") + " → " + (d.buyer || "—");
-    var sub = [fmtDate(d.date)]; var dt = dealDueTag(d); if (dt) sub.push(dt); if (d.stone) sub.push(esc(d.stone)); if (d.via === "direct") sub.push('<span class="tag">direct</span>');
+    var sub = [fmtDate(d.date)]; if (isOwn(d)) sub.push('<span class="tag own">own</span>'); var dt = dealDueTag(d); if (dt) sub.push(dt); if (d.stone) sub.push(esc(d.stone)); if (d.via === "direct") sub.push('<span class="tag">direct</span>');
+    if (isOwn(d)){ var pf = dealProfit(d);
+      return '<button class="row" data-deal="' + d.id + '"><div class="avatar av-in">◆</div><div class="main"><div class="t">' + esc(who) + '</div><div class="s">' + sub.join(" · ") + '</div></div>' +
+        '<div class="amt">' + inr(d.buyerAmount) + '<small class="' + (pf < 0 ? "r" : "g") + '">' + (pf < 0 ? "Loss " : "Profit ") + inr(Math.abs(pf)) + (br ? " + brok " + inr(br) : "") + '</small></div></button>'; }
     return '<button class="row" data-deal="' + d.id + '"><div class="avatar deal">◆</div><div class="main"><div class="t">' + esc(who) + '</div><div class="s">' + sub.join(" · ") + '</div></div>' +
       '<div class="amt">' + inr(d.amount) + '<small class="b">' + (br ? "Brok " + inr(br) : "No brokerage") + '</small></div></button>';
   }
@@ -883,7 +940,9 @@ document.querySelectorAll("dialog").forEach(function(d){
 /* ---------- deal sheet ---------- */
 var dealQuoteId = null, editingDeal = null, brokManual = false, buyerAmtManual = false;
 function openDeal(d, preset){
-  editingDeal = d || null; brokManual = false; buyerAmtManual = false;
+  editingDeal = d || null; brokManual = false; buyerAmtManual = false; dKindTouchedPct = false;
+  var kind = d ? (d.kind || "broker") : (preset && preset.kind) || "broker";
+  setSeg("d_kind", kind);
   dealQuoteId = (!d && preset && preset.quoteId) || null;
   $("dealTitle").textContent = d ? "Edit deal" : "New deal";
   $("d_delete").hidden = !d; $("d_saveAnother").hidden = !!d;
@@ -903,11 +962,14 @@ function openDeal(d, preset){
     daysToDue();
   }
   var diff = d && Math.abs(d.buyerAmount - d.amount) > 0.5;
-  $("d_buyerAmtWrap").hidden = !diff; $("d_buyerAmount").value = diff ? d.buyerAmount : "";
+  if (kind === "own") diff = true;
+  var baVal = d ? d.buyerAmount : (preset && preset.buyerAmount) || "";
+  $("d_buyerAmtWrap").hidden = !diff; $("d_buyerAmount").value = diff ? (baVal || "") : "";
   buyerAmtManual = !!diff;
   setSeg("d_via", d ? d.via : (preset && preset.via) || S.settings.via);
   setSeg("d_from", d ? d.brokFrom : (preset && preset.brokFrom) || S.settings.brokFrom);
-  $("d_pct").value = d ? (d.brokPct || "") : (preset && preset.pct != null ? preset.pct : S.settings.brokPct);
+  $("d_pct").value = d ? (d.brokPct || "") : (preset && preset.pct != null ? preset.pct : (kind === "own" ? 0 : S.settings.brokPct));
+  applyDealKind();
   $("d_brok").value = d ? r2((d.brokSeller||0) + (d.brokBuyer||0)) : "";
   if (d){ var calc = calcBrok(false); brokManual = Math.abs(calc.total - ((d.brokSeller||0)+(d.brokBuyer||0))) > 0.5; }
   dealPreview();
@@ -943,8 +1005,35 @@ $("d_days").addEventListener("input", daysToDue);
 $("d_due").addEventListener("input", dueToDays);
 $("d_date").addEventListener("input", function(){ if (!$("d_date").value) $("d_date").value = today(); if (readDays("d_days") != null) daysToDue(); else dueHint(); });
 
+/* Own deal: I buy from supplier at their rate and sell to customer at MY rate. Profit = my rate − supplier rate. */
+function isOwn(d){ return d && d.kind === "own"; }
+function dealProfit(d){ return isOwn(d) ? r2((d.buyerAmount || 0) - (d.amount || 0)) : 0; }
+var dKindTouchedPct = false;
+function applyDealKind(){
+  var own = segVal("d_kind") === "own";
+  $("d_sellerLab").textContent = own ? "Supplier (I buy from)" : "Seller";
+  $("d_buyerLab").textContent = own ? "Customer (I sell to)" : "Buyer";
+  $("d_seller").placeholder = own ? "Supplier" : "Who sold";
+  $("d_buyer").placeholder = own ? "Customer" : "Who bought";
+  $("d_amountLab").textContent = own ? "Supplier rate ₹ (I pay)" : "Deal amount ₹";
+  $("d_buyerAmtLab").textContent = own ? "My rate to customer ₹ (I receive)" : "Buyer pays ₹";
+  $("d_buyerAmount").placeholder = own ? "Your selling price" : "Same as deal amount";
+  $("d_diffToggle").hidden = own;
+  $("d_viaWrap").hidden = own;
+  $("d_brokLab").textContent = own ? "Brokerage from supplier (only if any)" : "Brokerage";
+  if (own){ $("d_buyerAmtWrap").hidden = false; setSeg("d_via", "me"); }
+  else if (!$("d_buyerAmount").value.trim()) $("d_buyerAmtWrap").hidden = true;
+}
+$("d_kind").addEventListener("change", function(){
+  var own = segVal("d_kind") === "own";
+  if (!editingDeal && !dKindTouchedPct){ $("d_pct").value = own ? 0 : S.settings.brokPct; brokManual = false; }
+  applyDealKind(); dealPreview();
+  if (own && !$("d_buyerAmount").value) $("d_buyerAmount").focus();
+});
+
 function dealAmounts(){
   var a = parseAmt($("d_amount").value);
+  if (segVal("d_kind") === "own") return { a: a, ba: $("d_buyerAmount").value.trim() ? parseAmt($("d_buyerAmount").value) : 0 };
   var ba = $("d_buyerAmtWrap").hidden || !$("d_buyerAmount").value.trim() ? a : parseAmt($("d_buyerAmount").value);
   return { a: a, ba: ba };
 }
@@ -970,6 +1059,14 @@ function dealPreview(){
   if (!brokManual){ var c = calcBrok(false); $("d_brok").value = c.total ? c.total : ""; }
   var c2 = calcBrok(true), from = segVal("d_from");
   $("d_brokHint").textContent = from === "both" && c2.total ? "Seller " + inr(c2.s) + " + buyer " + inr(c2.b) : (brokManual ? "₹ total (typed)" : "₹ total");
+  var ph = $("d_profitHint");
+  if (segVal("d_kind") === "own"){
+    if (am.a && am.ba && !isNaN(am.a) && !isNaN(am.ba)){
+      var pr = r2(am.ba - am.a);
+      ph.className = "hint " + (pr < 0 ? "warn" : "profit-pos");
+      ph.innerHTML = '<b>' + (pr < 0 ? "Loss " : "Profit ") + inr(Math.abs(pr)) + '</b> · ' + (am.a ? (pr / am.a * 100).toFixed(2) : 0) + '% on supplier rate';
+    } else { ph.className = "hint"; ph.textContent = "Type the rate you're selling at — profit shows here"; }
+  } else ph.textContent = "";
   var via = segVal("d_via"), seller = up($("d_seller").value) || "seller", buyer = up($("d_buyer").value) || "buyer";
   $("d_viaHint").textContent = via === "me"
     ? "You collect " + (am.ba ? inr(am.ba) : "the amount") + " from " + buyer + " and pay " + (am.a ? inr(am.a) : "it") + " to " + seller + "."
@@ -977,7 +1074,7 @@ function dealPreview(){
 }
 ["d_amount","d_buyerAmount","d_seller","d_buyer"].forEach(function(id){ $(id).addEventListener("input", dealPreview); });
 $("d_brok").addEventListener("input", function(){ brokManual = true; dealPreview(); });
-$("d_pct").addEventListener("input", function(){ brokManual = false; dealPreview(); });
+$("d_pct").addEventListener("input", function(){ brokManual = false; dKindTouchedPct = true; dealPreview(); });
 $("d_via").addEventListener("change", dealPreview);
 $("d_from").addEventListener("change", function(){ dealPreview(); });
 $("d_diffToggle").addEventListener("click", function(){ var w = $("d_buyerAmtWrap"); w.hidden = !w.hidden; if (!w.hidden) $("d_buyerAmount").focus(); else $("d_buyerAmount").value = ""; dealPreview(); });
@@ -989,11 +1086,15 @@ function saveDeal(another){
   if (seller && seller === buyer){ toast("Seller and buyer can't be the same party."); return false; }
   if (isNaN(am.a) || !am.a){ toast("Enter the deal amount."); $("d_amount").focus(); return false; }
   if (isNaN(am.ba)){ toast("Buyer amount is not a valid number."); return false; }
+  var own = segVal("d_kind") === "own";
+  if (own && (!seller || !buyer)){ toast("Own deal needs both supplier and customer."); (!seller ? $("d_seller") : $("d_buyer")).focus(); return false; }
+  if (own && !am.ba){ toast("Enter your rate to the customer."); $("d_buyerAmount").focus(); return false; }
   var br = calcBrok(true);
   var rec = editingDeal || { id: uid("D"), ts: Date.now() };
   Object.assign(rec, {
     date: $("d_date").value || today(), seller: seller, buyer: buyer,
-    amount: am.a, buyerAmount: buyer ? am.ba : 0, via: segVal("d_via"),
+    kind: own ? "own" : "broker",
+    amount: am.a, buyerAmount: buyer ? am.ba : 0, via: own ? "me" : segVal("d_via"),
     brokPct: parseFloat($("d_pct").value) || 0, brokFrom: segVal("d_from"),
     brokSeller: seller ? br.s : 0, brokBuyer: buyer ? br.b : 0,
     stone: $("d_stone").value.trim(),
@@ -1002,7 +1103,7 @@ function saveDeal(another){
   if (!editingDeal) S.deals.push(rec);
   if (!editingDeal && dealQuoteId){ S.quotes = S.quotes.filter(function(q){ return q.id !== dealQuoteId; }); dealQuoteId = null; }
   save(); render();
-  toast(editingDeal ? "Deal updated." : "Deal saved · brokerage " + inr(rec.brokSeller + rec.brokBuyer));
+  toast(editingDeal ? "Deal updated." : own ? "Own deal saved · " + (dealProfit(rec) < 0 ? "loss " : "profit ") + inr(Math.abs(dealProfit(rec))) : "Deal saved · brokerage " + inr(rec.brokSeller + rec.brokBuyer));
   if (another){ openDeal(null); } else { $("dlgDeal").close(); }
   return true;
 }
@@ -1132,11 +1233,12 @@ $("m_delete").addEventListener("click", function(){
 /* ---------- party sheet ---------- */
 var openParty = null;
 function showParty(name){ openParty = name; renderParty(name); if (!$("dlgParty").open) $("dlgParty").showModal(); }
+function stripOwnPrice(st){ return String(st || "").split(" · ")[0]; }
 function partyLines(name){
   var rows = [];
   S.deals.forEach(function(d){
-    if (d.seller === name) rows.push({ date:d.date, ts:d.ts||0, id:d.id, k:"deal", t:"Sold to " + (d.buyer || "—"), s:d.stone, eff: d.via === "me" ? -d.amount : 0, amt:d.amount, brok:d.brokSeller||0, direct:d.via !== "me" });
-    if (d.buyer === name) rows.push({ date:d.date, ts:d.ts||0, id:d.id, k:"deal", t:"Bought from " + (d.seller || "—"), s:d.stone, eff: d.via === "me" ? d.buyerAmount : 0, amt:d.buyerAmount, brok:d.brokBuyer||0, direct:d.via !== "me" });
+    if (d.seller === name) rows.push({ date:d.date, ts:d.ts||0, id:d.id, k:"deal", t: isOwn(d) ? "Sold to me" : "Sold to " + (d.buyer || "—"), s: isOwn(d) ? stripOwnPrice(d.stone) : d.stone, eff: d.via === "me" ? -d.amount : 0, amt:d.amount, brok:d.brokSeller||0, direct:d.via !== "me" });
+    if (d.buyer === name) rows.push({ date:d.date, ts:d.ts||0, id:d.id, k:"deal", t: isOwn(d) ? "Bought from me" : "Bought from " + (d.seller || "—"), s:d.stone, eff: d.via === "me" ? d.buyerAmount : 0, amt:d.buyerAmount, brok:d.brokBuyer||0, direct:d.via !== "me" });
   });
   S.money.forEach(function(m){
     if (m.party !== name) return;
@@ -1241,7 +1343,7 @@ $("mExcel").addEventListener("click", function(){
   bal.push({ Party:"TOTAL", "To receive":r2(B.t.recv), "To pay":r2(B.t.pay), "Brokerage earned":r2(brokTotals("all").earned), "Brokerage received":r2(brokTotals("all").recv), "Brokerage due":r2(B.t.brokDue - B.t.brokExcess) });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bal), "Balances");
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(S.deals.slice().sort(function(a,b){ return a.date.localeCompare(b.date); }).map(function(d){
-    return { Date:d.date, Seller:d.seller, Buyer:d.buyer, Stone:d.stone || "", "Deal amount":d.amount, "Buyer pays":d.buyerAmount, Payment:d.via === "me" ? "Through me" : "Direct", "Brokerage %":d.brokPct, "Brokerage from seller":d.brokSeller||0, "Brokerage from buyer":d.brokBuyer||0 };
+    return { Date:d.date, Type: isOwn(d) ? "Own" : "Brokerage", Seller:d.seller, Buyer:d.buyer, Stone:d.stone || "", "Deal amount / my cost":d.amount, "Buyer pays / my sale":d.buyerAmount, Payment:d.via === "me" ? "Through me" : "Direct", "Due date":d.due || "", "Brokerage %":d.brokPct, "Brokerage from seller":d.brokSeller||0, "Brokerage from buyer":d.brokBuyer||0, "Own profit": dealProfit(d) };
   })), "Deals");
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(S.money.slice().sort(function(a,b){ return a.date.localeCompare(b.date); }).map(function(m){
     return { Date:m.date, Party:m.party, Type:m.kind === "in" ? "Received" : "Paid", Amount:m.amount, "Brokerage part":m.brok || 0, Mode:m.mode === "bank" ? "Bank" : "Cash", Note:m.note || "" };
@@ -1410,17 +1512,17 @@ function buildExport(){
     var r = periodRange(xPeriod);
     var list = S.deals.filter(function(d){ return d.date >= r[0] && d.date <= r[1]; })
       .sort(function(a,b){ return a.date.localeCompare(b.date) || (a.ts||0) - (b.ts||0); });
-    var t = { a:0, b:0, s:0, u:0 };
+    var t = { a:0, b:0, s:0, u:0, p:0 };
     var rows = list.map(function(d){
-      var bt = (d.brokSeller||0) + (d.brokBuyer||0);
-      t.a += d.amount; t.b += d.buyerAmount || 0; t.s += d.brokSeller || 0; t.u += d.brokBuyer || 0;
-      return [dmy(d.date), d.seller || "", d.buyer || "", d.stone || "", r2(d.amount), r2(d.buyerAmount || 0), d.via === "me" ? "Through me" : "Direct", dmy(d.due), d.brokPct || 0, r2(d.brokSeller||0), r2(d.brokBuyer||0), r2(bt)];
+      var bt = (d.brokSeller||0) + (d.brokBuyer||0), pf = dealProfit(d);
+      t.a += d.amount; t.b += d.buyerAmount || 0; t.s += d.brokSeller || 0; t.u += d.brokBuyer || 0; t.p += pf;
+      return [dmy(d.date), isOwn(d) ? "Own" : "Brokerage", d.seller || "", d.buyer || "", d.stone || "", r2(d.amount), r2(d.buyerAmount || 0), d.via === "me" ? "Through me" : "Direct", dmy(d.due), d.brokPct || 0, r2(d.brokSeller||0), r2(d.brokBuyer||0), r2(bt), r2(pf)];
     });
     return { name:"deals", title:"Deals — " + r[2], sub: firm + " · " + list.length + " deals · made " + made,
-      head:["Date","Seller","Buyer","Stone","Deal amount","Buyer pays","Payment","Due date","Brok %","Brok seller","Brok buyer","Brok total"],
-      rows: rows, num:[4,5,8,9,10,11],
-      foot: rows.length ? [["Total","","","",r2(t.a),r2(t.b),"","","",r2(t.s),r2(t.u),r2(t.s+t.u)]] : [],
-      summary: list.length + " deals · deal value " + inr(t.a) + " · brokerage " + inr(t.s + t.u) };
+      head:["Date","Type","Seller / supplier","Buyer / customer","Stone","Deal amt / my cost","Buyer pays / my sale","Payment","Due date","Brok %","Brok seller","Brok buyer","Brok total","Own profit"],
+      rows: rows, num:[5,6,9,10,11,12,13],
+      foot: rows.length ? [["Total","","","","",r2(t.a),r2(t.b),"","","",r2(t.s),r2(t.u),r2(t.s+t.u),r2(t.p)]] : [],
+      summary: list.length + " deals · deal value " + inr(t.a) + " · brokerage " + inr(t.s + t.u) + (t.p ? " · own-deal profit " + inr(t.p) : "") };
   }
   var only = xWhat === "overdue";
   var items = DUES.filter(function(x){ return only ? isOverdue(x) : true; })
@@ -1627,6 +1729,11 @@ function openQuote(q){
   $("q_date").value = q && q.dealDate ? q.dealDate : today();
   syncDayPick("q_date");
   setSeg("q_via", q && q.via ? q.via : S.settings.via);
+  setSeg("q_kind", q && q.kind ? q.kind : "broker");
+  qMyFrom = q && q.myFrom ? q.myFrom : "disc";
+  $("q_mydisc").value = q && q.myDiscRaw ? q.myDiscRaw : ""; $("q_myamt").value = q && q.myAmtRaw ? q.myAmtRaw : "";
+  $("q_mydisc").placeholder = "26"; $("q_myamt").placeholder = "Auto";
+  applyQuoteKind();
   $("q_seller").value = q ? (q.seller || "") : "";
   $("q_buyer").value = q ? (q.buyer || "") : "";
   $("quoteTitle").textContent = q ? "Price card · " + fmtDate(q.date) : "Price card";
@@ -1655,8 +1762,40 @@ function qCalc(){
            via: segVal("q_via"),
            dealDate: $("q_date").value || today(),
            terms: readDays("q_terms") == null ? "" : readDays("q_terms"),
-           pct: $("q_pct").value.trim() === "" ? S.settings.brokPct : (parseFloat($("q_pct").value) || 0) };
+           pct: $("q_pct").value.trim() === "" ? S.settings.brokPct : (parseFloat($("q_pct").value) || 0),
+           kind: segVal("q_kind") || "broker" };
 }
+/* Own deal numbers: my discount (or my ₹ total) → my per-ct, total and ₹, plus profit */
+function qOwn(c){
+  var o = { myDiscRaw: $("q_mydisc").value.trim(), myAmtRaw: $("q_myamt").value.trim() };
+  var typedAmt = parseAmt(o.myAmtRaw);
+  if (qMyFrom === "amt" && typedAmt && c.rate && c.wt){
+    o.myAmt = r2(typedAmt); o.myTotal = r2(typedAmt / c.rate); o.myPerCt = Math.round(o.myTotal / c.wt);
+    o.myDisc = c.rap ? r2((o.myPerCt / c.rap - 1) * 100) : 0;
+  } else {
+    var raw = o.myDiscRaw.replace("%",""), md;
+    if (raw === "") md = c.disc; else { md = parseFloat(raw) || 0; if (raw.charAt(0) !== "+") md = -Math.abs(md); }
+    o.myDisc = md; o.myPerCt = Math.round(c.rap * (1 + md / 100));
+    o.myTotal = r2(o.myPerCt * c.wt); o.myAmt = r2(o.myTotal * c.rate);
+  }
+  o.profit = r2(o.myAmt - c.amt);
+  return o;
+}
+/* What the shared card shows: in an own deal, the customer sees MY rate */
+function cardFace(c){
+  if (c.kind !== "own") return c;
+  var o = qOwn(c);
+  return Object.assign({}, c, { disc: Math.round(o.myDisc * 100) / 100, less: 0, perCt: o.myPerCt, total: o.myTotal, amt: o.myAmt });
+}
+var qMyFrom = "disc";
+function applyQuoteKind(){
+  var own = segVal("q_kind") === "own";
+  $("q_ownWrap").hidden = !own; $("q_pctWrap").hidden = own; $("q_viaWrap").hidden = own;
+  $("q_discLab").textContent = own ? "Supplier disc %" : "Discount %";
+}
+$("q_kind").addEventListener("change", function(){ applyQuoteKind(); quoteUpdate(); if (segVal("q_kind") === "own" && !$("q_mydisc").value) $("q_mydisc").focus(); });
+$("q_mydisc").addEventListener("input", function(){ qMyFrom = "disc"; $("q_myamt").value = ""; quoteUpdate(); });
+$("q_myamt").addEventListener("input", function(){ qMyFrom = $("q_myamt").value.trim() ? "amt" : "disc"; if (qMyFrom === "amt") $("q_mydisc").value = ""; quoteUpdate(); });
 function qDesc(c){ return [c.wt ? c.wt.toFixed(2) : "", c.color, c.clar, c.shape].filter(Boolean).join(" "); }
 function usd(n, dec){ return "$" + Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: dec == null ? 2 : dec }); }
 function inr2(n){ return Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits:2, maximumFractionDigits:2 }); }
@@ -1679,8 +1818,20 @@ function quoteUpdate(now){
   if (Math.abs(c.disc) > 70){ dh.className = "hint warn"; dh.textContent = "Check the discount: " + c.disc + "% gives only " + usd(c.perCt, 0) + " per carat."; }
   else if (c.perCt && c.wt){ dh.className = "hint"; dh.textContent = usd(c.perCt, 0) + "/ct × " + c.wt + " ct = " + usd(c.total) + (c.rate ? " = ₹" + inr2(c.amt) : "") + bh; }
   else { dh.className = "hint"; dh.textContent = "Type 28 for 28% below Rap, +5 for 5% above."; }
+  if (c.kind === "own"){
+    dh.textContent = "Supplier: " + dh.textContent.replace(/ · brokerage.*$/, "");
+    var o = qOwn(c), mh = $("q_myHint");
+    if (o.myPerCt && c.wt && c.rate){
+      mh.className = "hint " + (o.profit < 0 ? "warn" : "profit-pos");
+      mh.style.fontSize = "14px";
+      mh.innerHTML = "My rate " + usd(o.myPerCt, 0) + "/ct (" + (o.myDisc > 0 ? "+" : "") + (Math.round(o.myDisc * 100) / 100) + "%) = ₹" + inr2(o.myAmt) +
+        '<br><b>' + (o.profit < 0 ? "Loss " : "Profit ") + inr(Math.abs(o.profit)) + "</b> · " + (c.amt ? (o.profit / c.amt * 100).toFixed(2) : 0) + "%";
+      if (qMyFrom === "disc") $("q_myamt").placeholder = inr2(o.myAmt); else $("q_mydisc").placeholder = String(Math.round(Math.abs(o.myDisc) * 100) / 100);
+    } else { mh.className = "hint"; mh.textContent = "Type your discount (e.g. 26) or your ₹ total — profit shows here"; }
+  }
   clearTimeout(qTimer);
-  qTimer = setTimeout(function(){ var cv = drawCard(c); $("q_card").src = cv.toDataURL("image/png"); cv.toBlob(function(b){ qBlob = b; }, "image/png"); }, now ? 0 : 120);
+  var face = cardFace(c);
+  qTimer = setTimeout(function(){ var cv = drawCard(face); $("q_card").src = cv.toDataURL("image/png"); cv.toBlob(function(b){ qBlob = b; }, "image/png"); }, now ? 0 : 120);
 }
 ["q_wt","q_disc","q_less"].forEach(function(id){ $(id).addEventListener("input", function(){ quoteUpdate(); }); });
 function termsHint(){
@@ -1744,6 +1895,7 @@ function qValid(c){
   return true;
 }
 function storeQuote(c){
+  if (c.kind === "own"){ var o = qOwn(c); c.myDiscRaw = o.myDiscRaw; c.myAmtRaw = o.myAmtRaw; c.myFrom = qMyFrom; c.myAmt = o.myAmt; c.myTotal = o.myTotal; c.myPerCt = o.myPerCt; c.profit = o.profit; }
   var q = editingQuote || { id: uid("Q"), ts: Date.now(), date: today() };
   Object.assign(q, c); q.ts = Date.now();
   if (!editingQuote){ S.quotes.unshift(q); editingQuote = q; }
@@ -1757,9 +1909,10 @@ function quoteText(c){
 }
 $("q_share").addEventListener("click", function(){
   var c = qCalc(); if (!qValid(c)) return;
-  var text = quoteText(c);
+  var face = cardFace(c);
+  var text = quoteText(face);
   var name = "price-" + qDesc(c).replace(/[^A-Z0-9.]+/gi, "-") + ".png";
-  var url = drawCard(c).toDataURL("image/png"), bin = atob(url.split(",")[1]), bytes = new Uint8Array(bin.length);
+  var url = drawCard(face).toDataURL("image/png"), bin = atob(url.split(",")[1]), bytes = new Uint8Array(bin.length);
   for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   var file = new File([bytes], name, { type: "image/png" });
   storeQuote(c);
@@ -1782,6 +1935,25 @@ function confirmQuote(q){
     return;
   }
   if (q.seller === q.buyer){ openQuote(q); toast("Supplier and customer can't be the same."); return; }
+  if (q.kind === "own"){
+    var ostone = qDesc(q) + " · " + usd(q.myTotal) + " @" + q.rate;
+    if (!q.buyer || !q.myAmt){
+      openDeal(null, { kind:"own", seller: q.seller, buyer: q.buyer, amount: q.amt, buyerAmount: q.myAmt, stone: ostone, terms: q.terms, date: q.dealDate, quoteId: q.id });
+      toast(!q.buyer ? "Add the customer name to save this own deal." : "Add your selling rate.");
+      return;
+    }
+    var orec = { id: uid("D"), ts: Date.now(), date: q.dealDate || today(), kind: "own", seller: q.seller, buyer: q.buyer,
+      amount: r2(q.amt), buyerAmount: r2(q.myAmt), via: "me", brokPct: 0, brokFrom: "seller", brokSeller: 0, brokBuyer: 0, stone: ostone,
+      buyRate: { perCt: q.perCt, disc: q.disc, total: q.total }, sellRate: { perCt: q.myPerCt, total: q.myTotal } };
+    var tq2 = q.terms !== undefined ? q.terms : S.settings.terms;
+    if (tq2 !== "" && tq2 != null && !isNaN(+tq2)){ orec.dueDays = +tq2; orec.due = addDays(orec.date, +tq2); } else { orec.due = ""; orec.dueDays = null; }
+    S.deals.push(orec);
+    S.quotes = S.quotes.filter(function(x){ return x.id !== q.id; });
+    save(); render();
+    var opf = dealProfit(orec);
+    toast("Own deal saved" + (orec.date !== today() ? " for " + fmtDate(orec.date) : "") + ": buy " + inr(orec.amount) + " · sell " + inr(orec.buyerAmount) + " · " + (opf < 0 ? "loss " : "profit ") + inr(Math.abs(opf)) + (orec.due ? " · due " + fmtDate(orec.due) : ""));
+    return;
+  }
   var brok = r2(q.amt * pct / 100);
   var rec = { id: uid("D"), ts: Date.now(), date: q.dealDate || today(), seller: q.seller, buyer: q.buyer || "",
     amount: r2(q.amt), buyerAmount: q.buyer ? r2(q.amt) : 0, via: q.via || S.settings.via,
@@ -1801,7 +1973,7 @@ function quoteDone(){
   // Card not fully filled: still carry forward whatever is there
   $("dlgQuote").close();
   openDeal(null, { seller: c.seller, buyer: c.buyer, amount: c.total && c.rate ? c.amt : "",
-    stone: qDesc(c) + (c.total ? " · " + usd(c.total) : ""), brokFrom: "seller", via: c.via, pct: c.pct, terms: c.terms, date: c.dealDate, quoteId: editingQuote ? editingQuote.id : null });
+    stone: qDesc(c) + (c.total ? " · " + usd(c.total) : ""), brokFrom: "seller", via: c.via, pct: c.kind === "own" ? 0 : c.pct, kind: c.kind, terms: c.terms, date: c.dealDate, quoteId: editingQuote ? editingQuote.id : null });
   if (!c.rate && c.total) toast("No ₹ rate on the card — type the ₹ amount.");
 }
 function dropQuote(id){
@@ -1820,7 +1992,7 @@ function renderQuotes(){
   $("quoteList").innerHTML = S.quotes.slice(0, 10).map(function(q){
     var who = [q.seller, q.buyer].filter(Boolean).join(" → ");
     return '<div class="row"><button class="main" data-quote="' + q.id + '" style="border:0;background:none;text-align:left;padding:0">' +
-      '<div class="t">' + esc(qDesc(q)) + ' · ₹' + Math.round(q.amt).toLocaleString("en-IN") + '</div>' +
+      '<div class="t">' + (q.kind === "own" ? '<span class="tag own">own</span> ' : "") + esc(qDesc(q)) + ' · ₹' + Math.round(q.kind === "own" && q.myAmt ? q.myAmt : q.amt).toLocaleString("en-IN") + (q.kind === "own" && q.profit != null ? ' <small class="' + (q.profit < 0 ? "r" : "g") + '">' + (q.profit < 0 ? "loss " : "+") + inr(Math.abs(q.profit)) + '</small>' : "") + '</div>' +
       '<div class="s">' + fmtDate(q.date) + (q.ts ? " " + clock(new Date(q.ts)) : "") + (who ? " · " + esc(who) : "") + " · " + usd(q.perCt, 0) + '/ct</div></button>' +
       '<div class="qrow-act"><button data-qdrop="' + q.id + '" aria-label="Drop">✕</button><button class="ok" data-qok="' + q.id + '">Done</button></div></div>';
   }).join("");
